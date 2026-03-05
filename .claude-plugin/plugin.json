@@ -1,0 +1,8 @@
+{
+  "name": "cletus-loop",
+  "description": "Run iterative agent loops with fresh context per iteration. Each iteration spawns a new Claude process — no accumulated history, no parent contamination.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Your Name"
+  }
+}
