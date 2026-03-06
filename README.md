@@ -1,9 +1,11 @@
 # cletus-loop
 
-A Claude Code plugin that runs iterative agent loops with fresh context per iteration. Ralph Wiggum, meet the even dumber Cletus Spuckler.
+A Claude Code plugin that runs iterative agent loops with fresh context per iteration. Ralph Wiggum, meet the even simpler Cletus Spuckler.
+
+Basically, a bash loop inside Claude Code.
 
 <p align="center">
-  <img src="cletus_spuckler.png" width="300" />
+  <img src="cletus_spuckler.png" width="600" />
 </p>
 
 ## Problem
@@ -54,26 +56,54 @@ claude --plugin-dir ./cletus-loop
 
 ## Usage
 
-### As a slash command
+### Basic loop with a prompt file [--file]
 ```
-/cletus-loop:cletus-loop PROMPT.MD 20 "PLAN COMPLETE"
+/cletus-loop:cletus-loop --file PROMPT.md --max-iterations 10 --completion-string "ALL DONE"
+```
+
+### Loop with a prompt string
+```
+/cletus-loop:cletus-loop "Read TASKS.md, pick one undone task, do it, mark it done. If all done output ALL DONE." --max-iterations 10
+```
+
+### Kill agent after each unit of work rather than allowing it to stop on its own [--iteration-string]
+(to prevent agent from creatively spiralling; sometimes with sloppy prompts, it 'infers' its own task list within a loop; also, be careful not to include terms it would use in its task work so it doesn't end prematurely like "CHECK TASK LIST")
+```
+/cletus-loop:cletus-loop --file PROMPT.md --iteration-string "TASK FINISHED" --completion-string "ALL DONE" --max-iterations 20
+```
+
+### Named loop [-name]
+(so you can cancel it if running multiple loops)
+```
+/cletus-loop:cletus-loop --file PROMPT.md --name proofreader --iteration-string "TASK FINISHED" --completion-string "ALL DONE"
+```
+
+### Cancel a running loop
+```
+/cletus-loop:cancel proofreader
+```
+
+### Show help
+```
+/cletus-loop:help
 ```
 
 ### From another agent/skill
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/cletus-loop.sh" PROMPT.MD 20 "PLAN COMPLETE"
+"${CLAUDE_PLUGIN_ROOT}/scripts/cletus-loop.sh" --file PROMPT.md --max-iterations 10 --completion-string "ALL DONE"
 ```
 
-## Writing prompt files
+## Pattern for writing prompt files
 
 Your prompt file should follow the one-item-per-iteration pattern:
 
 ```markdown
 Read TRACKER.md to see what's done.
+If everything is done, output "ALL DONE".
 Pick ONE item from SOURCE.md not in TRACKER.md.
 Do the work. Write output to output_files/.
 Append to TRACKER.md.
-If everything is done, output "ALL DONE".
+Output "TASK DONE".
 ```
 
 ## Why not just…
@@ -86,9 +116,27 @@ If everything is done, output "ALL DONE".
 
 **Cletus loop** gets you fresh-process isolation (like bash) while staying callable from inside CC (like subagents). The tradeoff is that all inter-iteration state lives in files on disk — which is the point.
 
-I know, its really _really_ dumb and a little embarrassing. But maybe it'll be helpful to you, goodluck
+
+## Summary
+
+Children of **LLM orchestrators** are affected by the parent's history and knowledge.
+
+**Ralph** is a single child who never leaves home with a room accumulating with context junk.
+
+**Cletus** children are parentless so they never inherit anything.
+
+<p align="center">
+  <img src="CletusLoop.png" width="300" />
+</p>
+
+
+I know its really dumb (basically a for loop for Claude Code). But maybe it'll be helpful to you, goodluck and godspeed
 --Omar Claflin
 
 ## License
 
 MIT
+
+<p align="center">
+  <img src="vicePrezCletus.png" width="300" />
+</p>
