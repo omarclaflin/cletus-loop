@@ -9,11 +9,7 @@ ITERATION_STRING=""
 LOOP_NAME=""
 CLAUDE_FLAGS="--dangerously-skip-permissions"
 PID_DIR="/tmp/cletus-loop"
-
-if ! command -v jq &>/dev/null; then
-  echo "Warning: jq is not installed. --iteration-string and agent output extraction require jq." >&2
-  echo "Install: brew install jq (macOS) or apt install jq (Linux)" >&2
-fi
+unset CLAUDECODE
 
 PROJECT_SLUG=$(pwd | sed 's|/|-|g; s|^-||; s|\.|-|g')
 TRANSCRIPT_DIR="$HOME/.claude/projects/-$PROJECT_SLUG"
@@ -82,6 +78,17 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [[ -n "$ITERATION_STRING" ]]; then
+  if ! command -v jq &>/dev/null; then
+    echo "Error: --iteration-string requires jq. Install: brew install jq (macOS) or apt install jq (Linux)" >&2
+    exit 1
+  fi
+  if ! command -v uuidgen &>/dev/null; then
+    echo "Error: --iteration-string requires uuidgen." >&2
+    exit 1
+  fi
+fi
+
 if [[ -n "$LOOP_NAME" ]]; then
   mkdir -p "$PID_DIR"
   PID_FILE="$PID_DIR/$LOOP_NAME.pid"
@@ -107,10 +114,10 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
   echo "=== Iteration $i / $MAX_ITERATIONS ==="
   echo "--- Agent working... ---"
 
-  SESSION_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
-  TRANSCRIPT_FILE="$TRANSCRIPT_DIR/$SESSION_ID.jsonl"
-
   if [[ -n "$ITERATION_STRING" ]]; then
+    SESSION_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
+    TRANSCRIPT_FILE="$TRANSCRIPT_DIR/$SESSION_ID.jsonl"
+
     echo "$PROMPT" | claude $CLAUDE_FLAGS --session-id "$SESSION_ID" &
     CLAUDE_PID=$!
 
@@ -140,11 +147,9 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
     echo "$ASSISTANT_TEXT"
     echo "--- Iteration $i complete ---"
   else
-    OUTPUT=$(echo "$PROMPT" | claude $CLAUDE_FLAGS --session-id "$SESSION_ID" 2>&1) || true
-    ASSISTANT_TEXT=$(extract_assistant_text "$TRANSCRIPT_FILE")
-    echo "--- Agent Output ---"
-    echo "$ASSISTANT_TEXT"
-    echo "--- Iteration $i complete ---"
+    OUTPUT=$(echo "$PROMPT" | claude $CLAUDE_FLAGS 2>&1) || true
+    echo "$OUTPUT" | tail -5
+    ASSISTANT_TEXT="$OUTPUT"
   fi
 
   if echo "$ASSISTANT_TEXT" | grep -qF "$COMPLETION_STRING"; then

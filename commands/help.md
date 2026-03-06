@@ -42,7 +42,7 @@ Cancel a running loop:
 | --name | (none) | Name for this loop. Required to use /cletus-loop:cancel. PID stored at /tmp/cletus-loop/<name>.pid |
 | --max-iterations | 20 | Safety cap on number of iterations |
 | --completion-string | "ALL DONE" | String that stops the entire loop when detected in output |
-| --iteration-string | (none) | String that kills the current iteration's agent when detected. Use this to prevent the agent from doing more than one unit of work per iteration. |
+| --iteration-string | (none) | String that kills the current iteration's agent when detected. Requires jq and uuidgen. |
 | --claude-flags | --dangerously-skip-permissions | Flags passed to the claude CLI |
 
 If --file is not used, all non-flag arguments are joined as the prompt string.
@@ -63,6 +63,12 @@ Your prompt file should follow the one-item-per-iteration pattern:
 3. Do the work
 4. Update the tracker
 5. If everything is done, output the completion string. Otherwise, output the iteration string.
+
+## Windows
+
+The basic loop (without --iteration-string) works on Windows via WSL or Git Bash — no extra dependencies beyond bash and claude.
+
+--iteration-string requires jq and uuidgen, which are not available on Windows natively. Install them via WSL, or use the basic loop without --iteration-string.
 
 ---
 By Omar Claflin — https://github.com/omarclaflin/cletus-loop
