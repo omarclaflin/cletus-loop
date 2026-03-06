@@ -7,6 +7,7 @@ MAX_ITERATIONS=20
 COMPLETION_STRING="ALL DONE"
 ITERATION_STRING=""
 LOOP_NAME=""
+TRIPLECHECK=1
 CLAUDE_FLAGS="--dangerously-skip-permissions"
 PID_DIR="/tmp/cletus-loop"
 unset CLAUDECODE
@@ -53,6 +54,14 @@ while [[ $# -gt 0 ]]; do
         exit 1
       fi
       ITERATION_STRING="$2"
+      shift 2
+      ;;
+    --triplecheck)
+      if [[ -z "${2:-}" ]] || ! [[ "$2" =~ ^[0-9]+$ ]]; then
+        echo "Error: --triplecheck requires a positive integer" >&2
+        exit 1
+      fi
+      TRIPLECHECK="$2"
       shift 2
       ;;
     --name)
@@ -110,6 +119,8 @@ else
   exit 1
 fi
 
+COMPLETION_COUNT=0
+
 for i in $(seq 1 "$MAX_ITERATIONS"); do
   echo "=== Iteration $i / $MAX_ITERATIONS ==="
   echo "--- Agent working... ---"
@@ -153,8 +164,13 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
   fi
 
   if echo "$ASSISTANT_TEXT" | grep -qF "$COMPLETION_STRING"; then
-    echo "=== Completed at iteration $i ==="
-    exit 0
+    COMPLETION_COUNT=$((COMPLETION_COUNT + 1))
+    if [[ $COMPLETION_COUNT -ge $TRIPLECHECK ]]; then
+      echo "=== Completed at iteration $i ($COMPLETION_COUNT/$TRIPLECHECK confirmations) ==="
+      exit 0
+    else
+      echo "=== Completion detected ($COMPLETION_COUNT/$TRIPLECHECK), continuing to verify... ==="
+    fi
   fi
 
   echo "---"

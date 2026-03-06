@@ -15,9 +15,9 @@ Existing loop approaches in Claude Code have context problems:
 | Approach | Issue |
 |----------|-------|
 | Ralph loop (stop hook) | Same session reused. History accumulates. Agent loses focus after many iterations. |
-| Subagent loop (Task/Agent tool) | Child results leak into parent context. Parent contaminates subsequent child prompts (via prompt generation contaminated by history). |
-| LLM Orchestrator + Task tool with verbatim prompt | The orchestrator is an LLM, not a pipe. As conversation history grows, prompt pass-through becomes increasingly nondeterministic — it paraphrases, summarizes, or injects its own context instead of forwarding verbatim. |
-| External bash loop | This works too -- clean isolation, but a plugin gives us agency options inside CC. |
+| Automated subagent loop (Task/Agent tool) | Child results leak into parent context. Parent contaminates subsequent child prompts (via prompt generation contaminated by history). |
+| LLM Orchestrator + Task tool with verbatim prompt | As conversation history grows, prompt pass-through becomes increasingly nondeterministic — it paraphrases, summarizes, or injects its own context instead of forwarding verbatim. |
+| External bash loop | This works, has clean isolation, but a plugin gives us agency options and abstractionß inside CC. |
 
 Basically, I wanted to setup loops with proper firewalls/without context accumulation, but realized I had to keep restarting /ralph or just externally looping claude code. Why? Because of context accumulation and information leaking.
 
@@ -78,6 +78,11 @@ claude --plugin-dir ./cletus-loop
 /cletus-loop:cletus-loop --file PROMPT.md --name proofreader --iteration-string "TASK FINISHED" --completion-string "ALL DONE"
 ```
 
+### Require multiple completion confirmations [--triplecheck]
+```
+/cletus-loop:cletus-loop --file PROMPT.md --completion-string "ALL DONE" --triplecheck 3
+```
+
 ### Cancel a running loop
 ```
 /cletus-loop:cancel proofreader
@@ -121,7 +126,7 @@ Output "TASK DONE".
 
 Children of **LLM orchestrators** are affected by the parent's history and knowledge.
 
-**Ralph** is a single child who never leaves home with a room accumulating with context junk.
+**Ralph** is a single child who never leaves his room accumulating context junk.
 
 **Cletus** children are parentless so they never inherit anything.
 

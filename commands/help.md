@@ -42,7 +42,8 @@ Cancel a running loop:
 | --name | (none) | Name for this loop. Required to use /cletus-loop:cancel. PID stored at /tmp/cletus-loop/<name>.pid |
 | --max-iterations | 20 | Safety cap on number of iterations |
 | --completion-string | "ALL DONE" | String that stops the entire loop when detected in output |
-| --iteration-string | (none) | String that kills the current iteration's agent when detected. Requires jq and uuidgen. |
+| --iteration-string | (none) | String that kills the current iteration's agent when detected. Use this to prevent the agent from doing more than one unit of work per iteration. Requires jq and uuidgen (problem on Windows machines). |
+| --triplecheck | 1 | Number of iterations that must output the completion string before the loop stops. Protects against premature completion claims. |
 | --claude-flags | --dangerously-skip-permissions | Flags passed to the claude CLI |
 
 If --file is not used, all non-flag arguments are joined as the prompt string.
