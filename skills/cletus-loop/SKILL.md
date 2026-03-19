@@ -18,13 +18,18 @@ You have access to a cletus-loop script that runs iterative agent loops with cle
 Run the bash script directly:
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/cletus-loop.sh" <prompt_file> [max_iterations] [completion_string]
+"${CLAUDE_PLUGIN_ROOT}/scripts/cletus-loop.sh" --file PROMPT.md --max-iterations 20 --completion-string "ALL DONE"
 ```
 
 Parameters:
-- **prompt_file**: Markdown file with instructions for each iteration. The prompt should tell the agent to read a tracker file to know what's done, do one unit of work, update the tracker, and exit.
-- **max_iterations**: Safety cap (default 20)
-- **completion_string**: The agent outputs this when all work is done (default "ALL DONE")
+- **--file**: Markdown file with instructions for each iteration
+- **--prompt**: Inline prompt string (alternative to --file)
+- **--max-iterations**: Safety cap (default 20)
+- **--completion-string**: The agent outputs this when all work is done (default "ALL DONE"); shared across all subprompts
+- **--iteration-string**: Kill the agent the moment it outputs this string (single-prompt mode)
+- **--triplecheck N**: Require N consecutive completion confirmations before stopping
+- **--name**: Name the loop so it can be cancelled
+- **--subprompt**: Start a new subprompt group (see multi-prompt below)
 
 ## Prompt file pattern
 
@@ -35,11 +40,28 @@ A good prompt file follows this structure:
 4. Update the tracker
 5. If everything is done, output the completion string
 
-## Example
+## Single-prompt example
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/cletus-loop.sh" RALPH_PROMPT.MD 20 "PLAN COMPLETE"
+"${CLAUDE_PLUGIN_ROOT}/scripts/cletus-loop.sh" --file PROMPT.md --max-iterations 20 --completion-string "PLAN COMPLETE"
 ```
+
+## Multi-prompt example
+
+Use `--subprompt` to define a sequence of prompts that cycle in order (A, B, C, A, B, C, ...). Each subprompt can have its own `--file`, `--prompt`, and `--iteration-string`. `--completion-string` is shared and can be output by any subprompt to stop the loop.
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/cletus-loop.sh" \
+  --subprompt --file STEP_A.md \
+  --subprompt --file STEP_B.md --iteration-string "B DONE" \
+  --subprompt --file STEP_C.md --iteration-string "C DONE" \
+  --completion-string "ALL DONE" \
+  --max-iterations 30
+```
+
+- Subprompt A has no `--iteration-string`: runs to natural completion each time
+- Subprompts B and C are killed the moment they output their iteration strings
+- Any subprompt outputting "ALL DONE" stops the entire loop
 
 ## Architecture notes
 

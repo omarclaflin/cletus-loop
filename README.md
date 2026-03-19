@@ -2,7 +2,7 @@
 
 A Claude Code plugin that runs iterative agent loops with fresh context per iteration. Ralph Wiggum, meet the even simpler Cletus Spuckler.
 
-Basically, a bash loop inside Claude Code.
+Basically, a bash loop inside Claude Code. (Or a bash loop that calls Claude Code iteratively, if you prefer.)
 
 <p align="center">
   <img src="cletus_spuckler.png" width="600" />
@@ -17,7 +17,7 @@ Existing loop approaches in Claude Code have context problems:
 | Ralph loop (stop hook) | Same session reused. History accumulates. Agent loses focus after many iterations. |
 | Automated subagent loop (Task/Agent tool) | Child results leak into parent context. Parent contaminates subsequent child prompts (via prompt generation contaminated by history). |
 | LLM Orchestrator + Task tool with verbatim prompt | As conversation history grows, prompt pass-through becomes increasingly nondeterministic — it paraphrases, summarizes, or injects its own context instead of forwarding verbatim. |
-| External bash loop | This works, has clean isolation, but a plugin gives us agency options and abstractionß inside CC. |
+| External bash loop | This works, has clean isolation, but a plugin gives us agency options and abstractions inside CC. |
 
 Basically, I wanted to setup loops with proper firewalls/without context accumulation, but realized I had to keep restarting /ralph or just externally looping claude code. Why? Because of context accumulation and information leaking.
 
@@ -83,6 +83,34 @@ claude --plugin-dir ./cletus-loop
 /cletus-loop:cletus-loop --file PROMPT.md --completion-string "ALL DONE" --triplecheck 3
 ```
 
+### Multi-prompt loop [--subprompt]
+
+Run a sequence of prompts that cycle in order: A, B, C, A, B, C, ...
+
+Each `--subprompt` starts a new group. Inside each group, specify `--file` or `--prompt`, and optionally `--iteration-string` to kill that agent the moment it signals done. `--completion-string` is shared — any subprompt outputting it stops the entire loop.
+
+```
+/cletus-loop:cletus-loop \
+  --subprompt --file STEP_A.md \
+  --subprompt --file STEP_B.md --iteration-string "B DONE" \
+  --subprompt --file STEP_C.md --iteration-string "C DONE" \
+  --completion-string "ALL DONE" \
+  --max-iterations 30
+```
+
+Inline strings work the same way with `--prompt`:
+```
+/cletus-loop:cletus-loop \
+  --subprompt --prompt "Do step A. If all done output ALL DONE." \
+  --subprompt --prompt "Do step B. Output B DONE when finished." --iteration-string "B DONE" \
+  --completion-string "ALL DONE" \
+  --max-iterations 20
+```
+
+**Which subprompts check for completion:** `--completion-string` is checked after every iteration regardless of which subprompt ran. If you only want prompt C to be able to stop the loop, write the completion string into C's prompt file and omit it from A and B's instructions — the agents control when they output it, so the prompt controls when completion is possible.
+
+**Which subprompts use iteration-string:** only subprompts that declare `--iteration-string` get the kill-on-signal behavior. Subprompts without it run to natural completion. This lets you mix: A runs freely, B and C are killed the moment they signal done.
+
 ### Cancel a running loop
 ```
 /cletus-loop:cancel proofreader
@@ -111,6 +139,45 @@ Append to TRACKER.md.
 Output "TASK DONE".
 ```
 
+## Testing
+
+The `test/` folder has a ready-made single-prompt test (pick words one at a time into a collector) and a multi-prompt test (A picks, B uppercases, cycles until all words are processed).
+
+### Single-prompt test
+
+Uses `test/PROMPT.md` and `test/WORDS.txt`. Each iteration picks one uncollected word and appends it to `test/COLLECTED.txt`. Stops when all 5 words are collected.
+
+Bash version:
+```bash
+echo -n "" > test/COLLECTED.txt
+./scripts/cletus-loop.sh --file test/PROMPT.md --completion-string "ALL DONE" --max-iterations 10
+```
+
+Claude Code version:
+```
+# Reset first
+/cletus-loop:cletus-loop --file test/PROMPT.md --completion-string "ALL DONE" --max-iterations 10
+```
+
+### Multi-prompt test
+
+Uses `test/multipromptA.md` and `test/multipromptB.md`. Subprompt A picks one word into `MULTIPROMPT_PICKED.txt` and signals done immediately. Subprompt B takes the latest unprocssed word, uppercases it into `MULTIPROMPT_UPPERCASED.txt`, and outputs "ALL DONE" when every word is processed. Cycles A→B→A→B... for 10 iterations total.
+
+Bash version:
+```bash
+rm -f test/MULTIPROMPT_PICKED.txt test/MULTIPROMPT_UPPERCASED.txt
+./scripts/cletus-loop.sh \
+  --subprompt --file test/multipromptA.md --iteration-string "A DONE" \
+  --subprompt --file test/multipromptB.md \
+  --completion-string "ALL DONE" \
+  --max-iterations 20
+```
+
+Claude Code version (reset tracker files first):
+```
+/cletus-loop:cletus-loop --subprompt --file test/multipromptA.md --iteration-string "A DONE" --subprompt --file test/multipromptB.md --completion-string "ALL DONE" --max-iterations 20
+```
+
 ## Why not just…
 
 **Ralph loop (stop hook, same session)?** Context accumulates. By iteration 15, the agent is dragging around the full history of iterations 1–14. Wasted tokens on finished work, and the model starts anchoring to earlier mistakes.
@@ -135,7 +202,7 @@ Children of **LLM orchestrators** are affected by the parent's history and knowl
 </p>
 
 
-I know its really dumb (basically a for loop for Claude Code). But maybe it'll be helpful to you, goodluck and godspeed
+I know its simple (basically a for loop for Claude Code). But maybe it'll be helpful to you, goodluck and godspeed
 --Omar Claflin
 
 ## License
