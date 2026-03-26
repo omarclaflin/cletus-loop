@@ -1,9 +1,9 @@
 Run a cletus-loop: an iterative agent loop where each iteration spawns a brand new Claude process with zero conversation history.
 
 Usage:
-  /cletus-loop:cletus-loop --file <prompt_file> [--max-iterations N] [--completion-string TEXT]
-  /cletus-loop:cletus-loop <prompt string> [--max-iterations N] [--completion-string TEXT]
-  /cletus-loop:cletus-loop --subprompt --file A.md [--iteration-string TEXT] --subprompt --file B.md [--iteration-string TEXT] ... [--max-iterations N] [--completion-string TEXT]
+  /cletus-loop:cletus-loop --file <prompt_file> [--var KEY=VALUE ...] [--max-iterations N] [--completion-string TEXT]
+  /cletus-loop:cletus-loop <prompt string> [--var KEY=VALUE ...] [--max-iterations N] [--completion-string TEXT]
+  /cletus-loop:cletus-loop --subprompt --file A.md [--iteration-string TEXT] --subprompt --file B.md [--iteration-string TEXT] ... [--var KEY=VALUE ...] [--max-iterations N] [--completion-string TEXT]
 
 Examples:
   /cletus-loop:cletus-loop --file PROMPT.md --max-iterations 10 --completion-string "PLAN COMPLETE"

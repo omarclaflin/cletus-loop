@@ -111,6 +111,15 @@ Inline strings work the same way with `--prompt`:
 
 **Which subprompts use iteration-string:** only subprompts that declare `--iteration-string` get the kill-on-signal behavior. Subprompts without it run to natural completion. This lets you mix: A runs freely, B and C are killed the moment they signal done.
 
+### Variable substitution [--var]
+Replace `{{KEY}}` placeholders in prompt content before each iteration.
+```
+/cletus-loop:cletus-loop --file PROMPT.md --var REPO=myapp --var BRANCH=main --max-iterations 10
+```
+If your prompt contains `{{REPO}}`, it becomes `myapp` before being passed to claude. Repeatable — pass `--var` once per variable. Works with both single and multi-prompt modes (vars are global, applied to all subprompts).
+
+**Limitation:** substitution uses bash string replacement, so `{{KEY}}` must appear literally in the prompt. No nested or dynamic keys.
+
 ### Cancel a running loop
 ```
 /cletus-loop:cancel proofreader

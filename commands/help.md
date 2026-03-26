@@ -44,6 +44,7 @@ Cancel a running loop:
 | --completion-string | "ALL DONE" | String that stops the entire loop when detected in output |
 | --iteration-string | (none) | String that kills the current iteration's agent when detected. Use this to prevent the agent from doing more than one unit of work per iteration. Requires jq and uuidgen (problem on Windows machines). |
 | --triplecheck | 1 | Number of iterations that must output the completion string before the loop stops. Protects against premature completion claims. |
+| --var | (none) | Replace `{{KEY}}` with VALUE in prompt content. Repeatable: `--var KEY1=V1 --var KEY2=V2`. Global across all subprompts. |
 | --claude-flags | --dangerously-skip-permissions | Flags passed to the claude CLI |
 
 If --file is not used, all non-flag arguments are joined as the prompt string.

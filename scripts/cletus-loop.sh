@@ -10,6 +10,8 @@ LOOP_NAME=""
 TRIPLECHECK=1
 CLAUDE_FLAGS="--dangerously-skip-permissions"
 PID_DIR="/tmp/cletus-loop"
+VAR_KEYS=()
+VAR_VALUES=()
 unset CLAUDECODE
 
 # Multi-prompt state
@@ -136,6 +138,15 @@ while [[ $# -gt 0 ]]; do
       CLAUDE_FLAGS="$2"
       shift 2
       ;;
+    --var)
+      if [[ -z "${2:-}" ]] || [[ "$2" != *=* ]]; then
+        echo "Error: --var requires KEY=VALUE format" >&2
+        exit 1
+      fi
+      VAR_KEYS+=("${2%%=*}")
+      VAR_VALUES+=("${2#*=}")
+      shift 2
+      ;;
     *)
       if [[ "$SUBPROMPT_MODE" == true ]]; then
         CURRENT_SP_PARTS+=("$1")
@@ -221,6 +232,9 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
     ITER_STRING="$ITERATION_STRING"
     echo "=== Iteration $i / $MAX_ITERATIONS ==="
   fi
+  for _v in "${!VAR_KEYS[@]}"; do
+    ITER_PROMPT="${ITER_PROMPT//\{\{${VAR_KEYS[$_v]}\}\}/${VAR_VALUES[$_v]}}"
+  done
   echo "--- Agent working... ---"
 
   if [[ -n "$ITER_STRING" ]]; then
